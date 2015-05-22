@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Car Linear Chart</title>
+</head>
+<body>
+<div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+<h4></h4>
+
+<label>Date</label>
+<input type="date"/>
+<button>What's the Mileage</button>
+<span></span>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="http://code.highcharts.com/highcharts.js"></script>
+<script src="http://code.highcharts.com/modules/exporting.js"></script>
+<script src="/regression.js"></script>
+<script>
+	Date.prototype.dayOfYear= function(){
+		var j1= new Date(this);
+		j1.setMonth(0, 0);
+		return Math.round((this-j1)/8.64e7);
+	};
+	var data = [["05/19/2011", 72732],["08/07/2011", 76982],["01/31/2012", 79914],["04/28/2012", 80964],["09/22/2012", 86537], ["02/27/2013", 88888], ["06/22/2013", 90950],["12/10/2013", 94997],["06/14/2014", 98630],["01/04/2015", 101232],["05/21/2015", 103684]];
+	// var data = [["01/28/1997", 72],["05/19/2011", 72732],["08/07/2011", 76982],["01/31/2012", 79914],["04/28/2012", 80964],["09/22/2012", 86537], ["02/27/2013", 88888], ["06/22/2013", 90950],["12/10/2013", 94997],["06/14/2014", 98630],["01/04/2015", 101232],["05/21/2015", 103684]];
+
+	var convertDateToNumber = function(date){
+		var d = new Date(date);
+		var dateNumber = d.getFullYear();
+		dateNumber += d.dayOfYear() / 365;
+		return dateNumber;
+	};
+
+	for(var i=0; i < data.length; i++){
+		data[i][0] = convertDateToNumber(data[i][0]);
+	}
+
+	var useRegressionEquation = function(regressionResult, dataPointX){
+		return regressionResult.equation[0] * dataPointX + regressionResult.equation[1];
+	};
+
+	var result = regression('linear', data);
+
+	var firstX = data[0][0];
+	var lastX = data[data.length - 1][0];
+	var firstY = useRegressionEquation(result, firstX);
+	var lastY = useRegressionEquation(result, lastX);
+	regressionRange = [[firstX, firstY], [lastX, lastY]];
+
+	$("h4").text(result.string);
+
+	$("button").on("click", function(){
+		$("span").text( Math.round( useRegressionEquation( result, convertDateToNumber($("input:first").val()) ) ) );
+	});
+
+	$(function () {
+		$('#container').highcharts({
+			yAxis: {
+				min: 0
+			},
+			title: {
+				text: 'Car Mileage over Time'
+			},
+			series: [{
+				type: 'line',
+				name: 'Regression Line',
+				data: regressionRange,
+				marker: {
+					enabled: false
+				},
+				states: {
+					hover: {
+						lineWidth: 0
+					}
+				},
+				enableMouseTracking: false
+			}, {
+				type: 'scatter',
+				name: 'Observations',
+				data: data,
+				marker: {
+					radius: 4
+				}
+			}]
+		});
+	});
+
+</script>
+
+</body>
+</html>
